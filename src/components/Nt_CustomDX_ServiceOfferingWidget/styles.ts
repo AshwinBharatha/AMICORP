@@ -409,7 +409,7 @@ export default styled.div(() => {
       margin: 0 0 20px;
       font-size: 20px;
       font-weight: 600;
-      color: ${textGrayMid};
+      color: ${primaryBlue};
       letter-spacing: 0.02em;
     }
 
@@ -417,7 +417,7 @@ export default styled.div(() => {
       margin: 22px 0 12px;
       font-size: 15px;
       font-weight: 700;
-      color: ${textBlack};
+      color: ${primaryBlue};
     }
 
     .section-label:first-of-type {
@@ -583,6 +583,89 @@ export default styled.div(() => {
     .sample-screen-meta {
       margin: 0;
       font-size: 14px;
+      color: ${textGray};
+    }
+
+    .services-screen {
+      padding-top: 2px;
+      border-top: 1px solid #eceff3;
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 740px;
+    }
+
+    .service-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      min-height: 70px;
+      padding: 14px 16px;
+      border: 1px solid #d8dee8;
+      border-radius: 4px;
+      background: #ffffff;
+      cursor: pointer;
+      text-align: left;
+      color: ${textBlack};
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+    }
+
+    .service-card:hover {
+      border-color: #b8c4d4;
+      box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
+    }
+
+    .service-card.selected {
+      border-color: #c56a79;
+      box-shadow: inset 0 0 0 1px #c56a79;
+    }
+
+    .service-card-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      background: #ececef;
+      color: #6f7385;
+      font-size: 16px;
+    }
+
+    .service-card.selected .service-card-icon {
+      background: #e7e6f0;
+      color: #5a5877;
+    }
+
+    .service-card-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .service-card-title {
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 600;
+      color: ${textBlack};
+    }
+
+    .service-card.selected .service-card-title {
+      color: #ac2d47;
+    }
+
+    .service-card-subtitle {
+      font-size: 12px;
+      line-height: 1.3;
       color: ${textGray};
     }
 
