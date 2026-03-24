@@ -3,8 +3,6 @@
 const configProps = {
   label: 'Service offering widget',
   header: 'Choose your JURISDICTION',
-  countryDataPageName: 'D_ActiveCountryList',
-  serviceDataPageName: 'D_GetServiceByCountry',
   datasource: {
     source: [
       {

@@ -10,66 +10,17 @@ interface NtCustomDxServiceOfferingWidgetProps extends PConnFieldProps {
     source?: Array<Record<string, any>>;
   };
   header?: string;
-  countryDataPageName?: string;
-  serviceDataPageName?: string;
 }
 
 interface CountryItem {
-  pyGUID: string;
   name: string;
   countryCode: string;
   isMajor: boolean;
 }
 
-interface ServiceItem {
-  pyGUID: string;
-  serviceId: string;
-  name: string;
-  iconSource: string;
-  countryCode: string;
-  isActive: boolean;
-}
-
-const DEFAULT_COUNTRY_LIST_DATAVIEW = 'D_ActiveCountryList';
-const DEFAULT_SERVICE_LIST_DATAVIEW = 'D_GetServiceByCountry';
+const COUNTRY_LIST_DATAVIEW = 'D_ActiveCountryList';
 
 const COUNTRY_LIST_PAGE_SIZE = 100;
-const SERVICE_LIST_PAGE_SIZE = 10;
-
-const FALLBACK_SERVICES: ServiceItem[] = [
-  {
-    pyGUID: 'fallback-company-management',
-    serviceId: 'CM',
-    name: 'Company Management',
-    iconSource: 'fa-solid fa-building-user',
-    countryCode: '',
-    isActive: true
-  },
-  {
-    pyGUID: 'fallback-financial-markets',
-    serviceId: 'FM',
-    name: 'Financial Markets',
-    iconSource: 'fa-solid fa-sack-dollar',
-    countryCode: '',
-    isActive: true
-  },
-  {
-    pyGUID: 'fallback-fund-administration',
-    serviceId: 'FA',
-    name: 'Fund Administration',
-    iconSource: 'fa-solid fa-circle-dollar-to-slot',
-    countryCode: '',
-    isActive: true
-  },
-  {
-    pyGUID: 'fallback-trust-management',
-    serviceId: 'TM',
-    name: 'Trust Management',
-    iconSource: 'fa-solid fa-handshake-angle',
-    countryCode: '',
-    isActive: true
-  }
-];
 
 const COUNTRY_LIST_QUERY = {
   distinctResultsOnly: true,
@@ -77,20 +28,7 @@ const COUNTRY_LIST_QUERY = {
     { field: 'CountryCode' },
     { field: 'Name' },
     { field: 'IsMajor' },
-    { field: 'IsActive' },
-    { field: 'pyGUID' }
-  ]
-} as const;
-
-const SERVICE_LIST_QUERY = {
-  distinctResultsOnly: true,
-  select: [
-    { field: 'CountryCode' },
-    { field: 'IsActive' },
-    { field: 'Name' },
-    { field: 'ServiceID' },
-    { field: 'IconSource' },
-    { field: 'pyGUID' }
+    { field: 'IsActive' }
   ]
 } as const;
 
@@ -123,10 +61,6 @@ const getCountryCode = (item: Record<string, any>): string => {
   return String(code).trim();
 };
 
-const getPyGUID = (item: Record<string, any>): string => {
-  return String(item.pyGUID ?? item.pxObjClassGUID ?? item.guid ?? '').trim();
-};
-
 const getCountryName = (item: Record<string, any>): string => {
   return (
     item.name ||
@@ -138,26 +72,6 @@ const getCountryName = (item: Record<string, any>): string => {
     item.Name ||
     ''
   );
-};
-
-const getServiceId = (item: Record<string, any>): string => {
-  return String(item.ServiceID ?? item.ServiceId ?? item.serviceId ?? item.ID ?? '').trim();
-};
-
-const getServiceName = (item: Record<string, any>): string => {
-  return String(item.Name ?? item.name ?? item.pyLabel ?? '').trim();
-};
-
-const getIconSource = (item: Record<string, any>): string => {
-  return String(item.IconSource ?? item.iconSource ?? item.Icon ?? '').trim();
-};
-
-const getIsActive = (item: Record<string, any>): boolean => {
-  const flag = item.IsActive ?? item.isActive ?? item.pyIsActive;
-  if (typeof flag === 'string') {
-    return flag.toLowerCase() === 'true' || flag === 'Y' || flag === '1';
-  }
-  return Boolean(flag === true);
 };
 
 const getIsMajor = (item: Record<string, any>): boolean => {
@@ -196,7 +110,6 @@ function mapRowsToCountryItems(sourceItems: Record<string, any>[]): CountryItem[
     }
     uniqueKeys.add(key);
     result.push({
-      pyGUID: getPyGUID(item),
       name,
       countryCode: code || name,
       isMajor: getIsMajor(item)
@@ -207,41 +120,7 @@ function mapRowsToCountryItems(sourceItems: Record<string, any>[]): CountryItem[
   return result;
 }
 
-function mapRowsToServiceItems(sourceItems: Record<string, any>[]): ServiceItem[] {
-  const uniqueKeys = new Set<string>();
-  const result: ServiceItem[] = [];
-
-  for (const item of sourceItems) {
-    if (!getIsActive(item)) {
-      continue;
-    }
-    const pyGUID = getPyGUID(item);
-    const serviceId = getServiceId(item);
-    const name = getServiceName(item);
-    const iconSource = getIconSource(item);
-    const countryCode = getCountryCode(item);
-    const key = (pyGUID || serviceId || name).toLowerCase();
-    if (!name || uniqueKeys.has(key)) {
-      continue;
-    }
-    uniqueKeys.add(key);
-    result.push({
-      pyGUID,
-      serviceId,
-      name,
-      iconSource,
-      countryCode,
-      isActive: true
-    });
-  }
-
-  return result.slice(0, SERVICE_LIST_PAGE_SIZE);
-}
-
-async function fetchAllCountryListRows(
-  getContextName: () => string,
-  countryDataPageName: string
-): Promise<Record<string, any>[]> {
+async function fetchAllCountryListRows(getContextName: () => string): Promise<Record<string, any>[]> {
   const pcore = getPCore();
   const getDataAsync = pcore?.getDataPageUtils?.()?.getDataAsync;
   if (typeof getDataAsync !== 'function') {
@@ -276,7 +155,7 @@ async function fetchAllCountryListRows(
     while (true) {
       const paging = { pageNumber, pageSize: COUNTRY_LIST_PAGE_SIZE };
       const response = await getDataAsync(
-        countryDataPageName,
+        COUNTRY_LIST_DATAVIEW,
         context,
         {},
         paging,
@@ -295,77 +174,12 @@ async function fetchAllCountryListRows(
   } catch (pagedError) {
     // Some environments expose a different getDataAsync signature; fallback to simpler calls.
     const fallbackCalls = [
-      () => getDataAsync(countryDataPageName, context),
-      () => getDataAsync(countryDataPageName),
-      () => getDataAsync(countryDataPageName, context, {})
+      () => getDataAsync(COUNTRY_LIST_DATAVIEW, context),
+      () => getDataAsync(COUNTRY_LIST_DATAVIEW),
+      () => getDataAsync(COUNTRY_LIST_DATAVIEW, context, {})
     ];
 
     let lastError: unknown = pagedError;
-    for (const call of fallbackCalls) {
-      try {
-        const response = await call();
-        return getRowsFromResponse(response);
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError;
-  }
-}
-
-async function fetchServiceListRows(
-  getContextName: () => string,
-  serviceDataPageName: string,
-  countryCode: string
-): Promise<Record<string, any>[]> {
-  const pcore = getPCore();
-  const getDataAsync = pcore?.getDataPageUtils?.()?.getDataAsync;
-  if (typeof getDataAsync !== 'function') {
-    return [];
-  }
-
-  const context = (() => {
-    try {
-      return getContextName?.() || '';
-    } catch {
-      return '';
-    }
-  })();
-
-  const getRowsFromResponse = (response: any): Record<string, any>[] => {
-    if (Array.isArray(response)) {
-      return response;
-    }
-    if (Array.isArray(response?.data)) {
-      return response.data;
-    }
-    if (Array.isArray(response?.pxResults)) {
-      return response.pxResults;
-    }
-    return [];
-  };
-
-  const params = { CountryCode: countryCode };
-  const paging = { pageNumber: 1, pageSize: SERVICE_LIST_PAGE_SIZE };
-
-  try {
-    const response = await getDataAsync(
-      serviceDataPageName,
-      context,
-      params,
-      paging,
-      { ...SERVICE_LIST_QUERY }
-    );
-    return getRowsFromResponse(response);
-  } catch (fullSignatureError) {
-    const fallbackCalls = [
-      () => getDataAsync(serviceDataPageName, context, params),
-      () => getDataAsync(serviceDataPageName, params),
-      () => getDataAsync(serviceDataPageName)
-    ];
-
-    let lastError: unknown = fullSignatureError;
     for (const call of fallbackCalls) {
       try {
         const response = await call();
@@ -394,32 +208,20 @@ function IconCheck({ small }: { small?: boolean }) {
 }
 
 function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetProps) {
-  const {
-    datasource,
-    header = 'Choose your JURISDICTION',
-    countryDataPageName = DEFAULT_COUNTRY_LIST_DATAVIEW,
-    serviceDataPageName = DEFAULT_SERVICE_LIST_DATAVIEW,
-    getPConnect
-  } = props;
+  const { datasource, header = 'Choose your JURISDICTION', getPConnect } = props;
   const getPConnectRef = useRef(getPConnect);
   getPConnectRef.current = getPConnect;
 
   const [searchValue, setSearchValue] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState<CountryItem | null>(null);
-  const [selectedServiceKey, setSelectedServiceKey] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [topStage, setTopStage] = useState<1 | 2 | 3 | 4>(1);
   const [leftStep, setLeftStep] = useState<1 | 2 | 3 | 4>(1);
   const [navError, setNavError] = useState('');
   const [portalTab, setPortalTab] = useState<'started' | 'callback'>('started');
   const [datapageCountries, setDatapageCountries] = useState<CountryItem[] | null | 'loading'>(null);
   const [datapageError, setDatapageError] = useState('');
-  const [datapageServices, setDatapageServices] = useState<ServiceItem[] | null | 'loading'>(null);
-  const [serviceDatapageError, setServiceDatapageError] = useState('');
 
-  const hasJurisdiction = Boolean(selectedCountry?.countryCode?.trim() || selectedCountry?.name?.trim());
-  const hasSelectedService = Boolean(selectedServiceKey);
-  const shouldUseServiceFallback =
-    process.env.NODE_ENV === 'test' || !getPCore()?.getDataPageUtils?.()?.getDataAsync;
+  const hasJurisdiction = Boolean(selectedCountry.trim());
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'test') {
@@ -435,10 +237,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     setDatapageCountries('loading');
     setDatapageError('');
 
-    fetchAllCountryListRows(
-      () => getPConnectRef.current().getContextName(),
-      countryDataPageName
-    )
+    fetchAllCountryListRows(() => getPConnectRef.current().getContextName())
       .then(rows => {
         if (cancelled) {
           return;
@@ -457,51 +256,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     return () => {
       cancelled = true;
     };
-  }, [countryDataPageName]);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'test') {
-      return;
-    }
-    if (!selectedCountry?.countryCode) {
-      setDatapageServices(null);
-      setServiceDatapageError('');
-      return;
-    }
-
-    const pcore = getPCore();
-    if (!pcore?.getDataPageUtils?.()?.getDataAsync) {
-      return;
-    }
-
-    let cancelled = false;
-    setDatapageServices('loading');
-    setServiceDatapageError('');
-
-    fetchServiceListRows(
-      () => getPConnectRef.current().getContextName(),
-      serviceDataPageName,
-      selectedCountry.countryCode
-    )
-      .then(rows => {
-        if (cancelled) {
-          return;
-        }
-        setDatapageServices(mapRowsToServiceItems(rows));
-        setServiceDatapageError('');
-      })
-      .catch(err => {
-        console.error(err);
-        if (!cancelled) {
-          setDatapageServices(null);
-          setServiceDatapageError('Could not load services from the server.');
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCountry?.countryCode, serviceDataPageName]);
+  }, []);
 
   const countries = useMemo<CountryItem[]>(() => {
     if (datapageCountries !== null && datapageCountries !== 'loading') {
@@ -532,13 +287,9 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
         setNavError('Please select a jurisdiction before continuing to the next stage.');
         return;
       }
-      if (stageId > 1 && !hasSelectedService) {
-        setNavError('Please select a service before continuing to the next stage.');
-        return;
-      }
       setTopStage(stageId);
     },
-    [hasJurisdiction, hasSelectedService]
+    [hasJurisdiction]
   );
 
   const handleLeftStepClick = useCallback(
@@ -548,19 +299,14 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
         setNavError('Please select a jurisdiction to access this step.');
         return;
       }
-      if (stepId > 2 && !hasSelectedService) {
-        setNavError('Please select a service to access this step.');
-        return;
-      }
       setTopStage(1);
       setLeftStep(stepId);
     },
-    [hasJurisdiction, hasSelectedService]
+    [hasJurisdiction]
   );
 
-  const handleSelectCountry = useCallback((country: CountryItem) => {
-    setSelectedCountry(country);
-    setSelectedServiceKey('');
+  const handleSelectCountry = useCallback((name: string) => {
+    setSelectedCountry(name);
     setNavError('');
     setTopStage(1);
     setLeftStep(prev => (prev === 1 ? 2 : prev));
@@ -578,10 +324,6 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
         return;
       }
       if (leftStep === 2) {
-        if (!hasSelectedService) {
-          setNavError('Please select at least one service to continue.');
-          return;
-        }
         setLeftStep(3);
         return;
       }
@@ -605,7 +347,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     if (topStage === 3) {
       setTopStage(4);
     }
-  }, [topStage, leftStep, hasJurisdiction, hasSelectedService]);
+  }, [topStage, leftStep, hasJurisdiction]);
 
   const handleFooterPrevious = useCallback(() => {
     setNavError('');
@@ -643,7 +385,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
       <p className='sample-screen-body'>{body}</p>
       {selectedCountry ? (
         <p className='sample-screen-meta'>
-          Selected jurisdiction: <strong>{selectedCountry.name}</strong>
+          Selected jurisdiction: <strong>{selectedCountry}</strong>
         </p>
       ) : null}
     </div>
@@ -687,8 +429,8 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
               <button
                 key={`major-${item.countryCode}`}
                 type='button'
-                className={`country-btn ${selectedCountry?.countryCode === item.countryCode ? 'selected' : ''}`}
-                onClick={() => handleSelectCountry(item)}
+                className={`country-btn ${selectedCountry === item.name ? 'selected' : ''}`}
+                onClick={() => handleSelectCountry(item.name)}
               >
                 {item.name}
               </button>
@@ -702,8 +444,8 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
                 <button
                   key={`all-${item.countryCode}`}
                   type='button'
-                  className={`country-btn ${selectedCountry?.countryCode === item.countryCode ? 'selected' : ''}`}
-                  onClick={() => handleSelectCountry(item)}
+                  className={`country-btn ${selectedCountry === item.name ? 'selected' : ''}`}
+                  onClick={() => handleSelectCountry(item.name)}
                 >
                   {item.name}
                 </button>
@@ -715,53 +457,9 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     }
 
     if (topStage === 1 && leftStep === 2) {
-      let services: ServiceItem[] = [];
-      if (datapageServices === 'loading') {
-        services = [];
-      } else if (datapageServices && datapageServices.length > 0) {
-        services = datapageServices;
-      } else if (shouldUseServiceFallback) {
-        services = FALLBACK_SERVICES;
-      }
-      return (
-        <div className='services-screen'>
-          <h3 className='content-heading'>Select your SERVICE</h3>
-          {serviceDatapageError ? (
-            <div className='nav-error' role='alert'>
-              {serviceDatapageError}
-            </div>
-          ) : null}
-          {datapageServices === 'loading' ? (
-            <p className='countries-loading' role='status'>
-              Loading services...
-            </p>
-          ) : null}
-          <div className='service-grid'>
-            {services.map(service => {
-              const key = service.pyGUID || service.serviceId || service.name;
-              const isSelected = selectedServiceKey === key;
-              return (
-                <button
-                  key={key}
-                  type='button'
-                  className={`service-card ${isSelected ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedServiceKey(key);
-                    setNavError('');
-                  }}
-                >
-                  <span className='service-card-icon' aria-hidden>
-                    <i className={service.iconSource || 'fa-solid fa-circle'} />
-                  </span>
-                  <span className='service-card-text'>
-                    <span className='service-card-title'>{service.name}</span>
-                    <span className='service-card-subtitle'>Services</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      return renderSampleScreen(
+        'Services',
+        'Sample screen: choose the services for your incorporation. Replace this content with your real services UI.'
       );
     }
     if (topStage === 1 && leftStep === 3) {
