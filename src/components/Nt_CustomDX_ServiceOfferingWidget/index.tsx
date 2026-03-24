@@ -32,6 +32,10 @@ const COUNTRY_LIST_QUERY = {
   ]
 } as const;
 
+/**
+ * Get the PCore instance from the globalThis object.
+ * @returns The PCore instance or undefined if not found.
+ */
 function getPCore(): any {
   return typeof globalThis !== 'undefined' ? (globalThis as Record<string, unknown>).PCore : undefined;
 }
