@@ -9,62 +9,62 @@ const configProps = {
     source: [
       {
         name: 'Australia',
-        CountryCode: 'AU',
+        countryCode: 'AU',
         isMajor: true
       },
       {
         name: 'Canada',
-        CountryCode: 'CA',
+        countryCode: 'CA',
         isMajor: true
       },
       {
         name: 'Europe',
-        CountryCode: 'EU',
+        countryCode: 'EU',
         isMajor: true
       },
       {
         name: 'Malaysia',
-        CountryCode: 'MY',
+        countryCode: 'MY',
         isMajor: true
       },
       {
         name: 'Netherlands',
-        CountryCode: 'NL',
+        countryCode: 'NL',
         isMajor: true
       },
       {
         name: 'Singapore',
-        CountryCode: 'SG',
+        countryCode: 'SG',
         isMajor: true
       },
       {
         name: 'Armenia',
-        CountryCode: 'AM',
+        countryCode: 'AM',
         isMajor: false
       },
       {
         name: 'Austria',
-        CountryCode: 'AT',
+        countryCode: 'AT',
         isMajor: false
       },
       {
         name: 'Azerbaijan',
-        CountryCode: 'AZ',
+        countryCode: 'AZ',
         isMajor: false
       },
       {
         name: 'Bahamas',
-        CountryCode: 'BS',
+        countryCode: 'BS',
         isMajor: false
       },
       {
         name: 'Bahrain',
-        CountryCode: 'BH',
+        countryCode: 'BH',
         isMajor: false
       },
       {
         name: 'Bangladesh',
-        CountryCode: 'BD',
+        countryCode: 'BD',
         isMajor: false
       }
     ],
@@ -76,7 +76,7 @@ const configProps = {
         name: 'Company Management',
         serviceId: 'CM',
         iconSource: 'fa-solid fa-building-user',
-        CountryCode: 'SG',
+        countryCode: 'SG',
         isActive: true,
         pyGUID: 'mock-service-1'
       },
@@ -84,7 +84,7 @@ const configProps = {
         name: 'Financial Markets',
         serviceId: 'FM',
         iconSource: 'fa-solid fa-sack-dollar',
-        CountryCode: 'SG',
+        countryCode: 'SG',
         isActive: true,
         pyGUID: 'mock-service-2'
       },
@@ -92,7 +92,7 @@ const configProps = {
         name: 'Fund Administration',
         serviceId: 'FA',
         iconSource: 'fa-solid fa-circle-dollar-to-slot',
-        CountryCode: 'MY',
+        countryCode: 'MY',
         isActive: true,
         pyGUID: 'mock-service-3'
       },
@@ -100,17 +100,9 @@ const configProps = {
         name: 'Trust Management',
         serviceId: 'TM',
         iconSource: 'fa-solid fa-handshake-angle',
-        CountryCode: 'CA',
+        countryCode: 'CA',
         isActive: true,
         pyGUID: 'mock-service-4'
-      },
-      {
-        name: 'European Corporate Services',
-        serviceId: 'EU-CS',
-        iconSource: 'fa-solid fa-building-user',
-        CountryCode: 'EU',
-        isActive: true,
-        pyGUID: 'mock-service-5'
       }
     ],
     fields: {}
