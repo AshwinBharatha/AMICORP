@@ -20,7 +20,7 @@ interface NtCustomDxServiceOfferingWidgetProps extends PConnFieldProps {
 interface CountryItem {
   pyGUID: string;
   name: string;
-  countryCode: string;
+  CountryCode: string;
   isMajor: boolean;
 }
 
@@ -29,7 +29,7 @@ interface ServiceItem {
   serviceId: string;
   name: string;
   iconSource: string;
-  countryCode: string;
+  CountryCode: string;
   isActive: boolean;
 }
 
@@ -45,7 +45,7 @@ const FALLBACK_SERVICES: ServiceItem[] = [
     serviceId: 'CM',
     name: 'Company Management',
     iconSource: 'fa-solid fa-building-user',
-    countryCode: '',
+    CountryCode: 'EU',
     isActive: true
   },
   {
@@ -53,7 +53,7 @@ const FALLBACK_SERVICES: ServiceItem[] = [
     serviceId: 'FM',
     name: 'Financial Markets',
     iconSource: 'fa-solid fa-sack-dollar',
-    countryCode: '',
+    CountryCode: 'SG',
     isActive: true
   },
   {
@@ -61,7 +61,7 @@ const FALLBACK_SERVICES: ServiceItem[] = [
     serviceId: 'FA',
     name: 'Fund Administration',
     iconSource: 'fa-solid fa-circle-dollar-to-slot',
-    countryCode: '',
+    CountryCode: 'MY',
     isActive: true
   },
   {
@@ -69,7 +69,7 @@ const FALLBACK_SERVICES: ServiceItem[] = [
     serviceId: 'TM',
     name: 'Trust Management',
     iconSource: 'fa-solid fa-handshake-angle',
-    countryCode: '',
+    CountryCode: 'CA',
     isActive: true
   }
 ];
@@ -163,12 +163,12 @@ const getIsActive = (item: Record<string, any>): boolean => {
   return Boolean(flag === true);
 };
 
-const filterServicesForCountry = (services: ServiceItem[], countryCode: string): ServiceItem[] => {
-  const normalizedCountryCode = countryCode.trim().toLowerCase();
+const filterServicesForCountry = (services: ServiceItem[], CountryCode: string): ServiceItem[] => {
+  const normalizedCountryCode = CountryCode.trim().toLowerCase();
   if (!normalizedCountryCode) {
     return [];
   }
-  return services.filter(service => service.countryCode.trim().toLowerCase() === normalizedCountryCode);
+  return services.filter(service => service.CountryCode.trim().toLowerCase() === normalizedCountryCode);
 };
 
 const getIsMajor = (item: Record<string, any>): boolean => {
@@ -209,7 +209,7 @@ function mapRowsToCountryItems(sourceItems: Record<string, any>[]): CountryItem[
     result.push({
       pyGUID: getPyGUID(item),
       name,
-      countryCode: code || name,
+      CountryCode: code,
       isMajor: getIsMajor(item)
     });
   }
@@ -230,7 +230,7 @@ function mapRowsToServiceItems(sourceItems: Record<string, any>[]): ServiceItem[
     const serviceId = getServiceId(item);
     const name = getServiceName(item);
     const iconSource = getIconSource(item);
-    const countryCode = getCountryCode(item);
+    const CountryCode = getCountryCode(item);
     const key = (pyGUID || serviceId || name).toLowerCase();
     if (!name || uniqueKeys.has(key)) {
       continue;
@@ -241,7 +241,7 @@ function mapRowsToServiceItems(sourceItems: Record<string, any>[]): ServiceItem[
       serviceId,
       name,
       iconSource,
-      countryCode,
+      CountryCode,
       isActive: true
     });
   }
@@ -328,7 +328,7 @@ async function fetchAllCountryListRows(
 async function fetchServiceListRows(
   getContextName: () => string,
   serviceDataPageName: string,
-  countryCode: string
+  CountryCode: string
 ): Promise<Record<string, any>[]> {
   const pcore = getPCore();
   const getDataAsync = pcore?.getDataPageUtils?.()?.getDataAsync;
@@ -357,37 +357,53 @@ async function fetchServiceListRows(
     return [];
   };
 
-  const params = { CountryCode: countryCode };
+  const paramVariants = [
+    { CountryCode },
+    { countryCode: CountryCode },
+    { pyCountryCode: CountryCode }
+  ];
   const paging = { pageNumber: 1, pageSize: SERVICE_LIST_PAGE_SIZE };
 
-  try {
-    const response = await getDataAsync(
-      serviceDataPageName,
-      context,
-      params,
-      paging,
-      { ...SERVICE_LIST_QUERY }
-    );
-    return getRowsFromResponse(response);
-  } catch (fullSignatureError) {
+  let lastError: unknown;
+  for (const params of paramVariants) {
+    try {
+      const response = await getDataAsync(
+        serviceDataPageName,
+        context,
+        params,
+        paging,
+        { ...SERVICE_LIST_QUERY }
+      );
+      const rows = getRowsFromResponse(response);
+      if (rows.length > 0) {
+        return rows;
+      }
+    } catch (fullSignatureError) {
+      lastError = fullSignatureError;
+    }
+
     const fallbackCalls = [
       () => getDataAsync(serviceDataPageName, context, params),
-      () => getDataAsync(serviceDataPageName, params),
-      () => getDataAsync(serviceDataPageName)
+      () => getDataAsync(serviceDataPageName, params)
     ];
 
-    let lastError: unknown = fullSignatureError;
     for (const call of fallbackCalls) {
       try {
         const response = await call();
-        return getRowsFromResponse(response);
+        const rows = getRowsFromResponse(response);
+        if (rows.length > 0) {
+          return rows;
+        }
       } catch (error) {
         lastError = error;
       }
     }
+  }
 
+  if (lastError) {
     throw lastError;
   }
+  return [];
 }
 
 function IconCheck({ small }: { small?: boolean }) {
@@ -428,7 +444,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
   const [datapageServices, setDatapageServices] = useState<ServiceItem[] | null | 'loading'>(null);
   const [serviceDatapageError, setServiceDatapageError] = useState('');
 
-  const hasJurisdiction = Boolean(selectedCountry?.countryCode?.trim() || selectedCountry?.name?.trim());
+  const hasJurisdiction = Boolean(selectedCountry?.CountryCode?.trim() || selectedCountry?.name?.trim());
   const hasSelectedService = Boolean(selectedServiceKey);
   const shouldUseServiceFallback =
     process.env.NODE_ENV === 'test' || !getPCore()?.getDataPageUtils?.()?.getDataAsync;
@@ -475,7 +491,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     if (process.env.NODE_ENV === 'test') {
       return;
     }
-    if (!selectedCountry?.countryCode) {
+    if (!selectedCountry?.CountryCode) {
       setDatapageServices(null);
       setServiceDatapageError('');
       return;
@@ -493,7 +509,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     fetchServiceListRows(
       () => getPConnectRef.current().getContextName(),
       serviceDataPageName,
-      selectedCountry.countryCode
+      selectedCountry.CountryCode
     )
       .then(rows => {
         if (cancelled) {
@@ -513,7 +529,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     return () => {
       cancelled = true;
     };
-  }, [selectedCountry?.countryCode, serviceDataPageName]);
+  }, [selectedCountry?.CountryCode, serviceDataPageName]);
 
   const countries = useMemo<CountryItem[]>(() => {
     if (datapageCountries !== null && datapageCountries !== 'loading') {
@@ -690,9 +706,9 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
           <div className='country-grid'>
             {majorCountries.map(item => (
               <button
-                key={`major-${item.countryCode}`}
+                key={`major-${item.CountryCode}`}
                 type='button'
-                className={`country-btn ${selectedCountry?.countryCode === item.countryCode ? 'selected' : ''}`}
+                className={`country-btn ${selectedCountry?.CountryCode === item.CountryCode ? 'selected' : ''}`}
                 onClick={() => handleSelectCountry(item)}
               >
                 {item.name}
@@ -705,9 +721,9 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
             <div className='country-grid country-grid--scroll-inner'>
               {filteredCountries.map(item => (
                 <button
-                  key={`all-${item.countryCode}`}
+                  key={`all-${item.CountryCode}`}
                   type='button'
-                  className={`country-btn ${selectedCountry?.countryCode === item.countryCode ? 'selected' : ''}`}
+                  className={`country-btn ${selectedCountry?.CountryCode === item.CountryCode ? 'selected' : ''}`}
                   onClick={() => handleSelectCountry(item)}
                 >
                   {item.name}
@@ -720,11 +736,9 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     }
 
     if (topStage === 1 && leftStep === 2) {
-      const selectedCountryCode = selectedCountry?.countryCode || '';
-      const countryScopedDatapageServices =
-        datapageServices && datapageServices !== 'loading'
-          ? filterServicesForCountry(datapageServices, selectedCountryCode)
-          : [];
+      const selectedCountryCode = selectedCountry?.CountryCode || '';
+      const datapageServicesList =
+        datapageServices && datapageServices !== 'loading' ? datapageServices : [];
       const countryScopedConfiguredServices = filterServicesForCountry(
         configuredServices,
         selectedCountryCode
@@ -739,8 +753,10 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
       if (datapageServices === 'loading') {
         services = [];
         serviceSourceLabel = 'datapage-loading';
-      } else if (countryScopedDatapageServices.length > 0) {
-        services = countryScopedDatapageServices;
+      } else if (datapageServicesList.length > 0) {
+        // Datapage is already parameterized by CountryCode; do not re-filter and drop rows
+        // when the response does not include CountryCode in every record.
+        services = datapageServicesList;
         serviceSourceLabel = 'datapage';
       } else if (countryScopedConfiguredServices.length > 0) {
         services = countryScopedConfiguredServices;
@@ -748,13 +764,18 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
       } else if (shouldUseServiceFallback) {
         services = countryScopedFallbackServices;
         serviceSourceLabel = 'fallback';
+      } else if (datapageServicesList.length === 0) {
+        serviceSourceLabel = 'datapage-empty';
+      } else {
+        serviceSourceLabel = 'no-match';
       }
       return (
         <div className='services-screen'>
           <h3 className='content-heading'>Select your SERVICE</h3>
           <p className='countries-loading' role='status'>
-            Debug: CountryCode={selectedCountry?.countryCode || 'N/A'} | source={serviceSourceLabel} | count=
-            {services.length}
+            Debug: CountryCode={selectedCountry?.CountryCode || 'N/A'} | source={serviceSourceLabel} | selectedCount=
+            {services.length} | datapageCount={datapageServicesList.length} | configuredCount=
+            {countryScopedConfiguredServices.length} | fallbackCount={countryScopedFallbackServices.length}
           </p>
           {serviceDatapageError ? (
             <div className='nav-error' role='alert'>
@@ -764,6 +785,11 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
           {datapageServices === 'loading' ? (
             <p className='countries-loading' role='status'>
               Loading services...
+            </p>
+          ) : null}
+          {datapageServices !== 'loading' && services.length === 0 ? (
+            <p className='countries-loading' role='status'>
+              No services available for CountryCode {selectedCountry?.CountryCode || 'N/A'}.
             </p>
           ) : null}
           <div className='service-grid'>
