@@ -59,45 +59,6 @@
             ]
         },
         {
-            "name": "serviceDatasource",
-            "label": "Service data source",
-            "defaultValue": "@DATASOURCE D_GetServiceByCountry.pxResults",
-            "format": "DATASOURCE",
-            "required": false,
-            "properties": [
-                {
-                    "name": "name",
-                    "label": "Service name",
-                    "defaultValue": "@P .Name"
-                },
-                {
-                    "name": "serviceId",
-                    "label": "Service ID",
-                    "defaultValue": "@P .ServiceID"
-                },
-                {
-                    "name": "iconSource",
-                    "label": "Icon source",
-                    "defaultValue": "@P .IconSource"
-                },
-                {
-                    "name": "countryCode",
-                    "label": "Country code",
-                    "defaultValue": "@P .CountryCode"
-                },
-                {
-                    "name": "isActive",
-                    "label": "Is active",
-                    "defaultValue": "@P .IsActive"
-                },
-                {
-                    "name": "pyGUID",
-                    "label": "Record GUID",
-                    "defaultValue": "@P .pyGUID"
-                }
-            ]
-        },
-        {
             "label": "Conditions",
             "format": "GROUP",
             "properties": [
@@ -122,7 +83,7 @@
         }
     ],
     "defaultConfig": {},
-    "buildDate": "2026-03-24T11:30:28.247Z",
+    "buildDate": "2026-03-24T10:58:42.794Z",
     "infinityVersion": "25.1.2-397",
     "packageCosmosVersion": "8.15.3"
 }
