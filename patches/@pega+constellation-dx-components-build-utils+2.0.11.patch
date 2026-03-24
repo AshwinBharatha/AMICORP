@@ -1,0 +1,34 @@
+diff --git a/node_modules/@pega/constellation-dx-components-build-utils/lib/build/build.js b/node_modules/@pega/constellation-dx-components-build-utils/lib/build/build.js
+index 068c8c5..67db442 100644
+--- a/node_modules/@pega/constellation-dx-components-build-utils/lib/build/build.js
++++ b/node_modules/@pega/constellation-dx-components-build-utils/lib/build/build.js
+@@ -122,7 +122,8 @@ const webpackBuild = (buildFolderFullPath, buildFolderName, packageVersion, toke
+   }
+   const projectPath = path.join(CONSTANTS.CURRENT_WORKING_DIR, CONSTANTS.PROJECT_ROOT).replace(/\\/g, '/');
+   const webpackPath = path.join(CONSTANTS.BUILD_TOOL_ROOT_PATH).replace(/\\/g, '/');
+-  child_process.execSync(`npx webpack --mode=production --env buildFolderFullPath=${buildFolderFullPath} buildFolderName=${buildFolderName} packageVersion=${packageVersion} appStaticUrl=${appStaticUrl} orgId=${orgId} v3=${v3} --config ${webpackPath}/webpack.config.js`, {
++  const webpackConfigPath = `${webpackPath}/webpack.config.js`;
++  child_process.execSync(`npx webpack --mode=production --env buildFolderFullPath=${buildFolderFullPath} buildFolderName=${buildFolderName} packageVersion=${packageVersion} appStaticUrl=${appStaticUrl} orgId=${orgId} v3=${v3} --config "${webpackConfigPath}"`, {
+     stdio: [0, 1, 2],
+     cwd: path.join(CONSTANTS.CURRENT_WORKING_DIR).replace(/\\/g, '/'),
+   });
+diff --git a/node_modules/@pega/constellation-dx-components-build-utils/lib/dev-server-asset/dev-server.js b/node_modules/@pega/constellation-dx-components-build-utils/lib/dev-server-asset/dev-server.js
+index a8a4adf..74f5017 100644
+--- a/node_modules/@pega/constellation-dx-components-build-utils/lib/dev-server-asset/dev-server.js
++++ b/node_modules/@pega/constellation-dx-components-build-utils/lib/dev-server-asset/dev-server.js
+@@ -12,13 +12,14 @@ const devServerStart = async(libraryName, libraryVersion, port) => {
+   buildComponentMapJsFile(buildFolderFullPath);
+   
+   const webpackPath = path.join(CONSTANTS.BUILD_TOOL_ROOT_PATH).replace(/\\/g, '/');
++  const webpackConfigPath = `${webpackPath}/webpack.config.js`;
+   const projectPath = path.join(CONSTANTS.CURRENT_WORKING_DIR, CONSTANTS.PROJECT_ROOT).replace(/\\/g, '/');
+     
+   if(!port){
+     port = 3030;
+   }
+   
+-  child_process.execSync(`npx webpack serve --mode=development --env mode=development buildFolderFullPath=${buildFolderFullPath} v3=false port=${port} --config ${webpackPath}/webpack.config.js`, {
++  child_process.execSync(`npx webpack serve --mode=development --env mode=development buildFolderFullPath=${buildFolderFullPath} v3=false port=${port} --config "${webpackConfigPath}"`, {
+     stdio: [0, 1, 2],
+     cwd: path.join(CONSTANTS.CURRENT_WORKING_DIR).replace(/\\/g, '/'),
+   });
