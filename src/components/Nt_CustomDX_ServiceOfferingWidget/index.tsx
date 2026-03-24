@@ -9,6 +9,9 @@ interface NtCustomDxServiceOfferingWidgetProps extends PConnFieldProps {
   datasource?: {
     source?: Array<Record<string, any>>;
   };
+  serviceDatasource?: {
+    source?: Array<Record<string, any>>;
+  };
   header?: string;
   countryDataPageName?: string;
   serviceDataPageName?: string;
@@ -158,6 +161,14 @@ const getIsActive = (item: Record<string, any>): boolean => {
     return flag.toLowerCase() === 'true' || flag === 'Y' || flag === '1';
   }
   return Boolean(flag === true);
+};
+
+const filterServicesForCountry = (services: ServiceItem[], countryCode: string): ServiceItem[] => {
+  const normalizedCountryCode = countryCode.trim().toLowerCase();
+  if (!normalizedCountryCode) {
+    return [];
+  }
+  return services.filter(service => service.countryCode.trim().toLowerCase() === normalizedCountryCode);
 };
 
 const getIsMajor = (item: Record<string, any>): boolean => {
@@ -396,6 +407,7 @@ function IconCheck({ small }: { small?: boolean }) {
 function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetProps) {
   const {
     datasource,
+    serviceDatasource,
     header = 'Choose your JURISDICTION',
     countryDataPageName = DEFAULT_COUNTRY_LIST_DATAVIEW,
     serviceDataPageName = DEFAULT_SERVICE_LIST_DATAVIEW,
@@ -514,6 +526,11 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     const sourceItems = datasource?.source || [];
     return mapRowsToCountryItems(sourceItems);
   }, [datasource, datapageCountries]);
+
+  const configuredServices = useMemo<ServiceItem[]>(() => {
+    const sourceItems = serviceDatasource?.source || [];
+    return mapRowsToServiceItems(sourceItems);
+  }, [serviceDatasource]);
 
   const majorCountries = useMemo(() => countries.filter(item => item.isMajor), [countries]);
 
@@ -637,18 +654,6 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
   const primaryActionLabel =
     topStage === 1 && leftStep === 4 ? 'Move to Details' : 'Next';
 
-  const renderSampleScreen = (title: string, body: string) => (
-    <div className='sample-screen'>
-      <h3 className='sample-screen-title'>{title}</h3>
-      <p className='sample-screen-body'>{body}</p>
-      {selectedCountry ? (
-        <p className='sample-screen-meta'>
-          Selected jurisdiction: <strong>{selectedCountry.name}</strong>
-        </p>
-      ) : null}
-    </div>
-  );
-
   const renderMainContent = () => {
     if (topStage === 1 && leftStep === 1) {
       return (
@@ -715,17 +720,42 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
     }
 
     if (topStage === 1 && leftStep === 2) {
+      const selectedCountryCode = selectedCountry?.countryCode || '';
+      const countryScopedDatapageServices =
+        datapageServices && datapageServices !== 'loading'
+          ? filterServicesForCountry(datapageServices, selectedCountryCode)
+          : [];
+      const countryScopedConfiguredServices = filterServicesForCountry(
+        configuredServices,
+        selectedCountryCode
+      );
+      const countryScopedFallbackServices = filterServicesForCountry(
+        FALLBACK_SERVICES,
+        selectedCountryCode
+      );
+
       let services: ServiceItem[] = [];
+      let serviceSourceLabel = 'none';
       if (datapageServices === 'loading') {
         services = [];
-      } else if (datapageServices && datapageServices.length > 0) {
-        services = datapageServices;
+        serviceSourceLabel = 'datapage-loading';
+      } else if (countryScopedDatapageServices.length > 0) {
+        services = countryScopedDatapageServices;
+        serviceSourceLabel = 'datapage';
+      } else if (countryScopedConfiguredServices.length > 0) {
+        services = countryScopedConfiguredServices;
+        serviceSourceLabel = 'widget-serviceDatasource';
       } else if (shouldUseServiceFallback) {
-        services = FALLBACK_SERVICES;
+        services = countryScopedFallbackServices;
+        serviceSourceLabel = 'fallback';
       }
       return (
         <div className='services-screen'>
           <h3 className='content-heading'>Select your SERVICE</h3>
+          <p className='countries-loading' role='status'>
+            Debug: CountryCode={selectedCountry?.countryCode || 'N/A'} | source={serviceSourceLabel} | count=
+            {services.length}
+          </p>
           {serviceDatapageError ? (
             <div className='nav-error' role='alert'>
               {serviceDatapageError}
@@ -764,34 +794,7 @@ function NtCustomDxServiceOfferingWidget(props: NtCustomDxServiceOfferingWidgetP
         </div>
       );
     }
-    if (topStage === 1 && leftStep === 3) {
-      return renderSampleScreen(
-        'Products',
-        'Sample screen: pick product packages. Replace this content with your product catalog.'
-      );
-    }
-    if (topStage === 1 && leftStep === 4) {
-      return renderSampleScreen(
-        'Add on Services',
-        'Sample screen: optional add-ons. Replace this content with your add-on offerings.'
-      );
-    }
-    if (topStage === 2) {
-      return renderSampleScreen(
-        'Details',
-        'Sample screen: capture company and contact details. Replace with your Details stage UI.'
-      );
-    }
-    if (topStage === 3) {
-      return renderSampleScreen(
-        'Packages',
-        'Sample screen: review and select a package. Replace with your Packages stage UI.'
-      );
-    }
-    return renderSampleScreen(
-      'Payment',
-      'Sample screen: payment and confirmation. Replace with your Payment stage UI.'
-    );
+    return null;
   };
 
   return (
